@@ -38,7 +38,7 @@ Lprec <- function(theta, p, ilowerL) {
     L[lower.tri(L)] <- theta
   } else {
     L[ilowerL] <- theta
-    G <- diag(p)
+    G <- matrix(0, p, p)
     G[ilowerL] <- -1
     G <- t(G)
     G[ilowerL] <- -1
@@ -76,4 +76,10 @@ fillLprec <- function(L, lfi) {
   }
   return(L)
 }
-
+#' @describeIn prec
+#' Internal function to build C
+theta2Lprec2C <- function(theta, p, ilowerL) {
+  L <- Lprec(theta, p, ilowerL)
+  V <- chol2inv(t(L))
+  return(cov2cor(V))
+}
