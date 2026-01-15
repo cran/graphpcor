@@ -2,51 +2,76 @@
 % Please edit documentation in R/cgeneric_LKJ.R
 \name{cgeneric_LKJ}
 \alias{cgeneric_LKJ}
-\title{Build an \code{inla.cgeneric} object to implement the
-LKG prior for the correlation matrix.}
+\title{Build an \code{cgeneric} model for
+the LKG prior on correlation matrix.}
 \usage{
-cgeneric_LKJ(n, eta, debug = FALSE, useINLAprecomp = TRUE, libpath = NULL)
+cgeneric_LKJ(
+  n,
+  eta,
+  sigma.prior.reference = rep(1, n),
+  sigma.prior.probability = rep(NA, n),
+  ...
+)
 }
 \arguments{
 \item{n}{integer to define the size of the matrix}
 
 \item{eta}{numeric greater than 1, the parameter}
 
-\item{debug}{integer, default is zero, indicating the verbose level.
-Will be used as logical by INLA.}
+\item{sigma.prior.reference}{numeric vector with length \code{n},
+\code{n} is the number of nodes (variables) in the graph, as the
+reference standard deviation to define the PC prior for each
+marginal variance parameters. If missing, the model will be
+assumed for a correlation. If a length \code{n} vector is given
+and \code{sigma.prior.reference} is missing, it will be used as
+known square root of the variances.}
 
-\item{useINLAprecomp}{logical, default is TRUE, indicating if it is to
-be used the shared object pre-compiled by INLA.
-This is not considered if 'libpath' is provided.}
+\item{sigma.prior.probability}{numeric vector with length \code{n}
+to set the probability statement of the PC prior for each
+marginal variance parameters. The probability statement is
+P(sigma < \code{sigma.prior.reference}) = p. If missing, all the
+marginal variances are considered as known, as described in
+\code{sigma.prior.reference}.
+If a vector is given and a probability is NA, 0 or 1, the
+corresponding \code{sigma.prior.reference} will be used as fixed.}
 
-\item{libpath}{string, default is NULL, with the path to the shared object.}
+\item{...}{additional arguments passed to \code{\link[INLAtools:cgeneric-class]{INLAtools::cgeneric()}}.}
 }
 \value{
-a \code{inla.cgeneric}, \code{\link[=cgeneric]{cgeneric()}} object.
+a \code{cgeneric} object, see \code{\link[INLAtools:cgeneric-class]{INLAtools::cgeneric()}} for details.
 }
 \description{
-Build an \code{inla.cgeneric} object to implement the
-LKG prior for the correlation matrix.
+Build an \code{cgeneric} model for
+the LKG prior on correlation matrix.
 }
 \details{
-The parametrization uses the
-hypershere decomposition, as proposed in
-Rapisarda, Brigo and Mercurio (2007).
-consider \eqn{\theta[k] \in [0, \infty], k=1,...,m=n(n-1)/2}
-from \eqn{\theta[k] \in [0, \infty], k=1,...,m=n(n-1)/2}
-compute \eqn{x[k] = pi/(1+exp(-theta[k]))}
-organize it as a lower triangle of a \eqn{n \times n} matrix
-\deqn{         | cos(x[i,j])                           ,      j=1}
-\deqn{B[i,j] = | cos(x[i,j])prod_{k=1}^{j-1}sin(x[i,k]),  2 <= j <= i-1}
-\deqn{         | prod_{k=1}^{j-1}sin(x[i,k])           ,      j=i}
-\deqn{         | 0                                     , j+1 <= j <= n }
-Result
-\deqn{\gamma[i,j] = -log(sin(x[i,j]))}
-\deqn{KLD(R) = \sqrt(2\sum_{i=2}^n\sum_{j=1}^{i-1} \gamma[i,j]}
+It uses the Cannonical Partial Correlation (CPC),
+see \code{\link[=basepcor]{basepcor()}} for details.
 }
-\references{
-Rapisarda, Brigo and Mercurio (2007).
-Parameterizing correlations: a geometric interpretation.
-IMA Journal of Management Mathematics (2007) 18, 55-73.
-<doi 10.1093/imaman/dpl010>
+\examples{
+## a cgeneric model for the LKJ prior
+## for theta from the CPC parametrization
+cglkj <- cgeneric(
+    model = "LKJ", n = 3, eta = 2,
+    useINLAprecomp = FALSE)##!is.na(packageCheck("INLA", "25.12.16")))
+
+## correlation matrix, p = 3
+cc <- matrix(c(1,.8,-.625, 0.8,1,-.5, -0.625,-.5,1), 3)
+
+## CPC parametrization: C(theta)
+(bb <- basecor(cc))
+th <- bb$theta
+
+## p(theta | eta)
+prior(cglkj, theta = th)
+
+## precision inverse
+solve(prec(cglkj, theta = th))
+solve(prec(cglkj, theta = c(0,0,0)))
+solve(prec(cglkj, theta = c(1,1,1)))
+
+
+}
+\seealso{
+\code{\link[=dLKJ]{dLKJ()}} and \code{\link[=basepcor]{basepcor()}}
 }

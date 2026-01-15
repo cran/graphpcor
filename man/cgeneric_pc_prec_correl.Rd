@@ -2,7 +2,7 @@
 % Please edit documentation in R/cgeneric_pc_prec_correl.R
 \name{cgeneric_pc_prec_correl}
 \alias{cgeneric_pc_prec_correl}
-\title{Build an \code{inla.cgeneric} to implement the PC-prior of a
+\title{Build an \code{cgeneric} object to implement the PC-prior of a
 precision matrix as inverse of a correlation matrix.}
 \usage{
 cgeneric_pc_prec_correl(
@@ -11,7 +11,7 @@ cgeneric_pc_prec_correl(
   theta.base,
   debug = FALSE,
   useINLAprecomp = TRUE,
-  libpath = NULL
+  shlib = NULL
 )
 }
 \arguments{
@@ -27,68 +27,58 @@ Will be used as logical by INLA.}
 
 \item{useINLAprecomp}{logical, default is TRUE, indicating if it is to
 be used the shared object pre-compiled by INLA.
-This is not considered if 'libpath' is provided.}
+This is not considered if 'shlib' is provided.}
 
-\item{libpath}{string, default is NULL, with the path to the shared object.}
+\item{shlib}{string, default is NULL, with the path to the shared object.}
 }
 \value{
-a \code{inla.cgeneric}, \code{\link[=cgeneric]{cgeneric()}} object.
+a \code{cgeneric} object, see \code{\link[INLAtools:cgeneric-class]{INLAtools::cgeneric()}} for details.
 }
 \description{
-Build an \code{inla.cgeneric} to implement the PC-prior of a
+Build an \code{cgeneric} object to implement the PC-prior of a
 precision matrix as inverse of a correlation matrix.
 }
 \details{
-The precision matrix parametrization
-step 1:
-\deqn{Q0 = \left[
+The Canonical Partial Correlation - CPC parametrization,
+Lewandowski, Kurowicka, and Joe (2009).
+step 1:  \eqn{q_i} = tanh(\eqn{\theta_i})
+step 2:
+\deqn{z = \left[
 \begin{array}{ccccc}
   1 & & & & \\
-  \theta_1 & 1 & & & \\
-  \theta_2 & \theta_n & & & \\
+  q_1 & 1 & & & \\
+  q_2 & q_n & & & \\
   \vdots & & \ldots & \ddots & \\
-  \theta_{n-1} & \theta_{2n-3} \ldots & \theta_m & 1
+  q_{n-1} & q_{2n-3} \ldots & q_m & 1
   \end{array}
   \right] }
 
-step 2: \eqn{V = Q0^{-1}}
+step 3: compute L such that the correlation matrix is
+\deqn{C = LL'}, a \eqn{n \times n} (lower triangle) matrix
+\deqn{L_{i,j} = \left\{\begin{array}{cc}
+0 & i>j\\
+1 & i=j=1\\
+z_{i,j} & j=1 \\
+prod_{k=1}^{j-1}\sqrt(1-z_{k,j^2}) & 1<i=j \\
+z_{i,j}prod_{k=1}^{j-1}\sqrt(1-z_{k,j}^2) &  1<j<i
+\end{array}\right.}
 
-step 3: \eqn{S = diag(V)^{1/2}}
-
-step 4: \eqn{C = SVS}
-
-step 5: \eqn{Q = C^{-1}}
-
-\deqn{p(Q|\lambda) = p(\theta[1:m] | lambda) =}
-\deqn{    p_C(C(Q)) | Jacobian C(Q) |}
-where p_C is the PC-prior for correlation,
-see section 6.2 of Simpson et. al. (2017),
-which is based on the hypersphere decomposition.
-
-The hypershere decomposition, as proposed in
-Rapisarda, Brigo and Mercurio (2007)
-consider \eqn{\theta[k] \in [0, \infty], k=1,...,m=n(n-1)/2}
-compute \eqn{x[k] = pi/(1+exp(-theta[k]))}
-organize it as a lower triangle of a \eqn{n \times n} matrix
-\deqn{B[i,j] = \left\{\begin{array}{cc}
-cos(x[i,j]) & j=1 \\
-cos(x[i,j])prod_{k=1}^{j-1}sin(x[i,k]) &  2 <= j <= i-1 \\
-prod_{k=1}^{j-1}sin(x[i,k])  & j=i \\
-0 &  j+1 <= j <= n \end{array}\right.}
-Result
-\deqn{\gamma[i,j] = -log(sin(x[i,j]))}
-\deqn{KLD(R) = \sqrt(2\sum_{i=2}^n\sum_{j=1}^{i-1} \gamma[i,j]}
+The prior of the correlation matrix is given as
+\deqn{p(C) = |J_m|*l*exp(-l*r)/(2*pi^(m-1)}
+following a bijective transformation from
+\deqn{\theta[1:m] \in R^{m} to \{r, \phi[1:(m-1)]\}}
+where \eqn{\phi[1:(m-1)]} are angles and
+r is the radius of a
+\href{https://en.wikipedia.org/wiki/N-sphere}{m-sphere}.
+That is
+\deqn{r ~ Exponential(\lambda)}
+\deqn{\phi[j] ~ Uniform(0, pi), j=1...m-2}
+\deqn{\phi[m-1] ~ Uniform(0, 2pi)}
+\eqn{J_m} is the Jacobian of this transformation
 }
 \references{
-Daniel Simpson, H\\aa vard Rue, Andrea Riebler, Thiago G.
-Martins and Sigrunn H. S\\o rbye (2017).
-Penalising Model Component Complexity:
-A Principled, Practical Approach to Constructing Priors
-Statistical Science 2017, Vol. 32, No. 1, 1–28.
-<doi 10.1214/16-STS576>
-
-Rapisarda, Brigo and Mercurio (2007).
-Parameterizing correlations: a geometric interpretation.
-IMA Journal of Management Mathematics (2007) 18, 55-73.
-<doi 10.1093/imaman/dpl010>
+Lewandowski, Daniel, Dorota Kurowicka, and Harry Joe.
+2009. “Generating Random Correlation Matrices Based
+on Vines and Extended Onion Method.”
+Journal of Multivariate Analysis 100: 1989–2001.
 }

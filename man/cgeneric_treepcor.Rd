@@ -5,17 +5,15 @@
 \title{Build an \code{cgeneric} for \code{\link[=treepcor]{treepcor()}})}
 \usage{
 cgeneric_treepcor(
-  graph,
+  model,
   lambda,
   sigma.prior.reference,
   sigma.prior.probability,
-  debug = FALSE,
-  useINLAprecomp = TRUE,
-  libpath = NULL
+  ...
 )
 }
 \arguments{
-\item{graph}{object of class \code{treepcor} for the model specification.}
+\item{model}{object of class \code{treepcor} for the model specification.}
 
 \item{lambda}{the lambda parameter for the graph correlation prior.}
 
@@ -25,23 +23,18 @@ to define the prior for the standard deviation parameters.}
 \item{sigma.prior.probability}{a vector with the probability values
 to define the prior for the standard deviation parameters.}
 
-\item{debug}{integer, default is zero, indicating the verbose level.
-Will be used as logical by INLA.}
-
-\item{useINLAprecomp}{logical, default is TRUE, indicating if it is to
-be used the shared object pre-compiled by INLA.
-This is not considered if 'libpath' is provided.}
-
-\item{libpath}{string, default is NULL, with the path to the shared object.}
+\item{...}{additional arguments passed on to
+\code{\link[INLAtools:cgeneric-class]{INLAtools::cgenericBuilder()}}.}
 }
 \value{
-a \code{inla.cgeneric}, \code{\link[=cgeneric]{cgeneric()}} object.
+\code{cgeneric}/\code{cgeneric} object.
 }
 \description{
-This set the necessary data to implement the penalized
+This creates an \code{cgeneric} (see \code{\link[INLAtools:cgeneric-class]{INLAtools::cgeneric()}})
+containing the necessary data to implement the penalized
 complexity prior for a correlation matrix considering
-a three as proposed in
-\href{https://arxiv.org/abs/2312.06289}{Sterrantino et. al. 2025}
+a three as proposed in Sterrantino et. al. 2025
+\doi{https://doi.org/10.1007/s10260-025-00788-y}.
 }
 \details{
 The correlation prior as in the paper depends on the lambda value.
@@ -59,5 +52,5 @@ sigma.prior.probability = c(0.05, 0.0, 0.01)
 then the sigma is fixed to 2 and not estimated.
 }
 \seealso{
-\code{\link[=treepcor]{treepcor()}} and \code{\link[=cgeneric]{cgeneric()}}
+\code{\link[=treepcor]{treepcor()}} and \code{\link[INLAtools:cgeneric-class]{INLAtools::cgeneric()}}
 }

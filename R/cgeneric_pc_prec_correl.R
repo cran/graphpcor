@@ -1,4 +1,4 @@
-#' Build an `inla.cgeneric` to implement the PC-prior of a
+#' Build an `cgeneric` object to implement the PC-prior of a
 #' precision matrix as inverse of a correlation matrix.
 #' @param n integer to define the size of the matrix
 #' @param lambda numeric (positive), the penalization rate parameter
@@ -8,79 +8,68 @@
 #' Will be used as logical by INLA.
 #' @param useINLAprecomp logical, default is TRUE, indicating if it is to
 #' be used the shared object pre-compiled by INLA.
-#' This is not considered if 'libpath' is provided.
-#' @param libpath string, default is NULL, with the path to the shared object.
+#' This is not considered if 'shlib' is provided.
+#' @param shlib string, default is NULL, with the path to the shared object.
 #' @details
-#' The precision matrix parametrization
-#' step 1:
-#' \deqn{Q0 = \left[
+#' The Canonical Partial Correlation - CPC parametrization,
+#'  Lewandowski, Kurowicka, and Joe (2009).
+#' step 1:  \eqn{q_i} = tanh(\eqn{\theta_i})
+#' step 2:
+#' \deqn{z = \left[
 #' \begin{array}{ccccc}
 #'   1 & & & & \\
-#'   \theta_1 & 1 & & & \\
-#'   \theta_2 & \theta_n & & & \\
+#'   q_1 & 1 & & & \\
+#'   q_2 & q_n & & & \\
 #'   \vdots & & \ldots & \ddots & \\
-#'   \theta_{n-1} & \theta_{2n-3} \ldots & \theta_m & 1
+#'   q_{n-1} & q_{2n-3} \ldots & q_m & 1
 #'   \end{array}
 #'   \right] }
 #'
-#' step 2: \eqn{V = Q0^{-1}}
+#' step 3: compute L such that the correlation matrix is
+#' \deqn{C = LL'}, a \eqn{n \times n} (lower triangle) matrix
+#' \deqn{L_{i,j} = \left\{\begin{array}{cc}
+#' 0 & i>j\\
+#' 1 & i=j=1\\
+#' z_{i,j} & j=1 \\
+#' prod_{k=1}^{j-1}\sqrt(1-z_{k,j^2}) & 1<i=j \\
+#' z_{i,j}prod_{k=1}^{j-1}\sqrt(1-z_{k,j}^2) &  1<j<i
+#' \end{array}\right.}
 #'
-#' step 3: \eqn{S = diag(V)^{1/2}}
-#'
-#' step 4: \eqn{C = SVS}
-#'
-#' step 5: \eqn{Q = C^{-1}}
-#'
-#' \deqn{p(Q|\lambda) = p(\theta[1:m] | lambda) =}
-#' \deqn{    p_C(C(Q)) | Jacobian C(Q) |}
-#'  where p_C is the PC-prior for correlation,
-#'   see section 6.2 of Simpson et. al. (2017),
-#' which is based on the hypersphere decomposition.
-#'
-#' The hypershere decomposition, as proposed in
-#' Rapisarda, Brigo and Mercurio (2007)
-#' consider \eqn{\theta[k] \in [0, \infty], k=1,...,m=n(n-1)/2}
-#' compute \eqn{x[k] = pi/(1+exp(-theta[k]))}
-#' organize it as a lower triangle of a \eqn{n \times n} matrix
-#' \deqn{B[i,j] = \left\{\begin{array}{cc}
-#' cos(x[i,j]) & j=1 \\
-#' cos(x[i,j])prod_{k=1}^{j-1}sin(x[i,k]) &  2 <= j <= i-1 \\
-#' prod_{k=1}^{j-1}sin(x[i,k])  & j=i \\
-#' 0 &  j+1 <= j <= n \end{array}\right.}
-#' Result
-#' \deqn{\gamma[i,j] = -log(sin(x[i,j]))}
-#'  \deqn{KLD(R) = \sqrt(2\sum_{i=2}^n\sum_{j=1}^{i-1} \gamma[i,j]}
+#' The prior of the correlation matrix is given as
+#'  \deqn{p(C) = |J_m|*l*exp(-l*r)/(2*pi^(m-1)}
+#'  following a bijective transformation from
+#'  \deqn{\theta[1:m] \in R^{m} to \{r, \phi[1:(m-1)]\}}
+#'  where \eqn{\phi[1:(m-1)]} are angles and
+#'  r is the radius of a
+#'  [m-sphere](https://en.wikipedia.org/wiki/N-sphere).
+#'  That is
+#'  \deqn{r ~ Exponential(\lambda)}
+#'  \deqn{\phi[j] ~ Uniform(0, pi), j=1...m-2}
+#'  \deqn{\phi[m-1] ~ Uniform(0, 2pi)}
+#'  \eqn{J_m} is the Jacobian of this transformation
 #' @references
-#' Daniel Simpson, H\\aa vard Rue, Andrea Riebler, Thiago G.
-#' Martins and Sigrunn H. S\\o rbye (2017).
-#' Penalising Model Component Complexity:
-#' A Principled, Practical Approach to Constructing Priors
-#' Statistical Science 2017, Vol. 32, No. 1, 1–28.
-#' <doi 10.1214/16-STS576>
-#'
-#' Rapisarda, Brigo and Mercurio (2007).
-#'   Parameterizing correlations: a geometric interpretation.
-#'   IMA Journal of Management Mathematics (2007) 18, 55-73.
-#'   <doi 10.1093/imaman/dpl010>
-#'
-#' @return a `inla.cgeneric`, [cgeneric()] object.
+#' Lewandowski, Daniel, Dorota Kurowicka, and Harry Joe.
+#' 2009. “Generating Random Correlation Matrices Based
+#' on Vines and Extended Onion Method.”
+#' Journal of Multivariate Analysis 100: 1989–2001.
+#' @return a `cgeneric` object, see [cgeneric()] for details.
 cgeneric_pc_prec_correl <-
   function(n,
            lambda,
            theta.base,
            debug = FALSE,
            useINLAprecomp = TRUE,
-           libpath = NULL) {
+           shlib = NULL) {
 
-    if(is.null(libpath)) {
+    if(is.null(shlib)) {
       if (useINLAprecomp) {
-        libpath <- INLA::inla.external.lib("graphpcor")
+        shlib <- INLA::inla.external.lib("graphpcor")
       } else {
-        libpath <- system.file("libs", package = "graphpcor")
+        shlib <- system.file("libs", package = "graphpcor")
         if (Sys.info()["sysname"] == "Windows") {
-          libpath <- file.path(libpath, "graphpcor.dll")
+          shlib <- file.path(shlib, "graphpcor.dll")
         } else {
-          libpath <- file.path(libpath, "graphpcor.so")
+          shlib <- file.path(shlib, "graphpcor.so")
         }
       }
     }
@@ -90,20 +79,28 @@ cgeneric_pc_prec_correl <-
 
     m <- n*(n-1)/2
 
+    lc <- 0
+
     if(missing(theta.base)) {
       theta.base <- rep(0, m)
       warning("Missing 'theta.base' model. Assuming 'iid' by using:\n",
               paste(theta.base, collapse = ", "))
     }
-    H.el <- theta2H(theta.base)
-    if(debug) {
-      cat("H elements\n")
-      print(str(H.el))
-    }
+    stopifnot(length(theta.base)==m)
+      H.el <- Hcorrel(
+        theta = theta.base,
+        p = m,
+        parametrization = "itp",
+        itheta = which(lower.tri(diag(m))),
+        decomposition = "svd")
+      if(debug) {
+        cat("H elements\n")
+        print(utils::str(H.el))
+      }
+##      lc <- lc - sum(log(H.el$svd$d))
 
-    ## constant: log( \lambda \pi^{m-1}/2 |H| )
-    lc <- log(lambda) -(m-1)*log(pi) - log(2)
-    lc <- lc - sum(log(H.el$svd$d))
+    ## constant:
+    lc <- log(lambda) -gamma(1+m/2)-log(m)-(m/2)*log(pi)
 
     if(debug) {
       cat('log C', lc, '\n')
@@ -117,7 +114,7 @@ cgeneric_pc_prec_correl <-
         n = as.integer(n),
         cgeneric = list(
           model = cmodel,
-          shlib = libpath,
+          shlib = shlib,
           n = as.integer(n),
           debug = as.logical(debug),
           data = list(
@@ -127,13 +124,15 @@ cgeneric_pc_prec_correl <-
             ),
             doubles = list(
               lambda = as.numeric(lambda),
-              lconst = as.numeric(lc)
+              lconst = as.numeric(lc),
+              theta0 = as.numeric(theta.base)
             ),
             characters = list(
               model = cmodel,
-              shlib = libpath
+              shlib = shlib
             ),
             matrices = list(
+              hHn = c(m,m,attr(H.el, "h.5"))
               ),
             smatrices = list(
               )
@@ -142,7 +141,7 @@ cgeneric_pc_prec_correl <-
         )
       )
 
-    class(the_model) <- "inla.cgeneric"
+    class(the_model) <- "cgeneric"
     class(the_model$f$cgeneric) <- "inla.cgeneric"
 
     return(the_model)

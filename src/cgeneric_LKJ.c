@@ -35,8 +35,12 @@ double *inla_cgeneric_LKJ(inla_cgeneric_cmd_tp cmd, double *theta, inla_cgeneric
 	// This is the cgeneric implementatin of the
 	// LKJ prior for a correlation matrix C with dimension N,
 	// given (scalar) parameter 'eta'.
-	// Parametrized from a hypershere decomposition,
-	// see Rapisarda, Brigo and Mercurio (2007).
+	// Parametrized from the
+	// Canonical Partial Correlation - CPC.
+	//     cpc: x[j] = tanh(\theta[i])
+	// See #correlation-matrix-inverse-transform at
+	//  https://mc-stan.org/docs/reference-manual/transforms.html
+
 	// It returns for if 'cmd' is
 	// 'graph': i,j index set for the upper triangle of Q;
 	// 'Q': the inverse of C;
@@ -65,7 +69,45 @@ double *inla_cgeneric_LKJ(inla_cgeneric_cmd_tp cmd, double *theta, inla_cgeneric
 	assert(!strcasecmp(data->doubles[1]->name, "lc"));
 	double lc = data->doubles[1]->doubles[0];
 
-/*
+	assert(!strcasecmp(data->ints[2]->name, "sfixed"));   // this will always be the case
+	int nsigmas = data->ints[2]->len;
+	assert(nsigmas==N);
+	int nsfixed = 0, sfixed[nsigmas];
+	for (i = 0; i < nsigmas; i++) {
+	  sfixed[i] = data->ints[2]->ints[i];
+	  nsfixed += sfixed[i];
+	}
+
+	assert(!strcasecmp(data->doubles[2]->name, "sigmaref"));
+	inla_cgeneric_vec_tp *sigmaref = data->doubles[2];
+	assert(sigmaref->len > 0);
+	assert(nsigmas == sigmaref->len);
+	for (i = 0; i < nsigmas; i++) {
+	  assert(sigmaref->doubles[i] > 0);
+	}
+	assert(!strcasecmp(data->doubles[3]->name, "sigmaprob"));
+	inla_cgeneric_vec_tp *sigmaprob = data->doubles[3];
+	assert(sigmaprob->len > 0);
+	assert(nsigmas == sigmaprob->len);
+	int nunkparams[3];
+	nunkparams[0] = nsigmas - nsfixed;
+	nunkparams[1] = nth;	// num params low L
+	nunkparams[2] = nunkparams[0] + nunkparams[1];
+
+	double sigmas[N];
+	if(theta) {
+	  k = 0;
+	  for (i = 0; i < N; i++) {
+	    if (sfixed[i]) {
+	      sigmas[i] = sigmaref->doubles[i];
+	    } else {
+	      sigmas[i] = exp(theta[k++]);
+	    }
+	  }
+	  assert(nunkparams[0]==k);
+	}
+
+	/*
 	if (debug > 999) {
 		printf("N=%d, nth=%d, M=%d, eta=%f, lc=%f\n", N, nth, M, eta, lc);
 	}
@@ -97,26 +139,25 @@ double *inla_cgeneric_LKJ(inla_cgeneric_cmd_tp cmd, double *theta, inla_cgeneric
 		ret[0] = -1;				       /* REQUIRED */
 		ret[1] = M;				       /* REQUIRED */
 
-		double hld;
-		// build L that factorize C giving C = LL'
-		theta2gamma2Lcorr(N, &hld, &theta[0], &ret[2]);
+	// Cholesky of the correlation matrix
+	// parametrized as correlation matrix inverse transform
+	  double ldet, aJac;
+	  cpcCholesky(&N, &theta[nunkparams[0]],
+               &ret[offset], &ldet, &aJac);
 
-/*
-		if (debug > 999) {
-			printf("L:\n");
-			k = 0;
-			for (i = 0; i < N; i++) {
-				for (j = i; j < N; j++) {
-					printf("%2.3f ", ret[offset + k++]);
-				}
-				printf("\n");
-			}
-		}
-*/
-		// chol2inv: Q = C^{-1} computed from L
-		int info;
-		char uplo = 'L';
-		dpptri_(&uplo, &N, &ret[offset], &info, F_ONE);
+    // include sigmas in the Cholesky
+    k = 2;
+    for(i=0; i<N; i++) {
+      for(j=i; j<N; j++) {
+        ret[k] *= sigmas[j];
+        k++;
+      }
+    }
+
+    // chol2inv
+    int info;
+    char uplo = 'L';
+    dpptri_(&uplo, &N, &ret[offset], &info, F_ONE);
 
 	}
 		break;
@@ -133,9 +174,9 @@ double *inla_cgeneric_LKJ(inla_cgeneric_cmd_tp cmd, double *theta, inla_cgeneric
 		// return c(P, initials)
 		// where P is the number of hyperparameters
 		ret = Calloc(nth + 1, double);
-		ret[0] = nth;
-		for (i = 0; i < nth; i++) {
-			ret[1 + i] = 3.0;
+		ret[0] = nunkparams[2];
+		for (i = 0; i < nunkparams[2]; i++) {
+			ret[1 + i] = 0.0;
 		}
 	}
 		break;
@@ -144,81 +185,29 @@ double *inla_cgeneric_LKJ(inla_cgeneric_cmd_tp cmd, double *theta, inla_cgeneric
 	{
 		ret = Calloc(1, double);
 
-		// log determinant is computed in the theta2gamma2Lcorrel
-		double lhdetC, ll[N * (N + 1) / 2], cc1[N * (N - 1) / 2], cc2[N * (N - 1) / 2];
-		theta2gamma2Lcorr(N, &lhdetC, &theta[0], &ll[0]);
+		// ll : Cholesky of the correlation matrix
+		// ldet: its log determinant
+		// aJac: absolute of the determinant
+		double ll[N * (N + 1) / 2];
+		double ldR, ldJ;
+		cpcCholesky(&N, &theta[0], &ll[0], &ldR, &ldJ);
 
-/*
-		if (debug > 999) {
-			printf("L[upper]:\n");
-			k = 0;
-			for (i = 0; i < N; i++) {
-				for (j = i; j < N; j++) {
-					printf("%2.3f ", ll[k++]);
-				}
-				printf("\n");
-			}
-			printL(ll, N, N, "Lcorr\n");
-			printf("|R| = %2.5f, lc+(eta-1)|R| = %2.5f\n", 2.0 * lhdetC, lc + 2.0 * (eta - 1) * lhdetC);
-		}
-*/
-
-		L2Cupper(N, &ll[0], &cc1[0]);
-
-
-/*
- 		if (debug > 999) {
-			printf("C:\n");
-			k = 0;
-			for (i = 0; i < (N - 1); i++) {
-				for (j = i; j < (N - 1); j++) {
-					printf("%2.5f ", cc1[k++]);
-				}
-				printf("\n");
-			}
-		}
-*/
-
-		// compute the Jacobian[nth*nth]
-		int kj, k2 = 0;
-		double ldtmp, daux, h = 0.0005;
-		double h2 = 2.0 * h;
-		double mJacobian[nth * nth];
-		for (kj = 0; kj < nth; kj++) {
-			daux = theta[kj];
-			theta[kj] = daux - h;
-			theta2gamma2Lcorr(N, &ldtmp, &theta[0], &ll[0]);
-			L2Cupper(N, &ll[0], &cc1[0]);
-			theta[kj] = daux + h;
-			theta2gamma2Lcorr(N, &ldtmp, &theta[0], &ll[0]);
-			L2Cupper(N, &ll[0], &cc2[0]);
-			theta[kj] = daux;
-			// store derivatives
-			for (k = 0; k < nth; k++) {
-				daux = (cc2[k] - cc1[k]) / h2;
-				mJacobian[k2++] = daux;
-			}
-		}
-
-		int info, pivot[nth], lwork = 2 * nth + nth + 1;
-		double work[lwork], tau[nth];
-		dgeqp3_(&nth, &nth, &mJacobian[0], &nth, &pivot[0], &tau[0], &work[0], &lwork, &info, F_ONE);
-		double ldJacobian = 0.0;
-		for (i = 0; i < nth; i++) {
-			ldJacobian += log(fabs(mJacobian[i * nth + i]));
-		}
-/*
-		if (debug > 99) {
-			printf("\ndet Jacobian = %f\n", ldJacobian);
-		}
-*/
-		if (ldJacobian < 0) {
-			ldJacobian *= -1.0;
-		}
 		// store the log-prior
-		// 'lc' is a pre-computed constant
-		ret[0] = lc + 2.0 * lhdetC * (eta - 1.0);
-		ret[0] += ldJacobian;
+		ret[0] = ldR * (eta - 1.0) -lc;
+//		printf("p(R|eta) = %2.4f\n", ret[0]);
+		ret[0] += ldJ;
+
+		// PC prior for sigma[i] (if not fixed)
+		if(nunkparams[0]>0) {
+		  double lam;
+		  for (i = 0; i < nunkparams[0]; i++) {
+		    if (!sfixed[i]) {
+		      k = i; //theta->ints[i];
+		      lam = -log(sigmaprob->doubles[k]) / sigmaref->doubles[k];
+		      ret[0] += pclogsigma(theta[i], lam);
+		    }
+		  }
+		}
 
 	}
 		break;

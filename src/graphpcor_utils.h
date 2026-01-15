@@ -88,6 +88,8 @@
 
 double cov2kld(int n, double *C0, double *C1);
 double pclogsigma(double lsigma, double lam);
+double pcmultivar(int m, double param, double *theta0,
+                  double *halfI, double *ldhI, double *theta);
 void L2Cupper(int n, double *ll, double *cc);
 void correlation_parent_children(int np, int N, int niiv, int *iiv, int *jjv, int *ipar, int *itop, double *sch, double *v2, double *CC);
 void cov2cor(int n, double *cc);
@@ -97,6 +99,8 @@ void dl2fullQ(int n, double *d, double *l, double *q);
 void exchangeableU(int n, double r, double *cc);
 void fillL(int *d, int *m, int *ii, int *jj, double *x);
 void l2L(int n, double *l, double *L);
+void cpcCholesky(int *N, double *theta,
+                 double *L, double *ldR, double *ldJ);
 void theta2Qcorrel(int n, int std, double *theta, double *Qu);
 void theta2gamma2Lcorr(int n, double *hldet, double *theta, double *L);
 void theta2precision(int n, double *l, double *Q);

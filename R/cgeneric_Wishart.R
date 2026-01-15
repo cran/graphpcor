@@ -1,4 +1,4 @@
-#' Build an `inla.cgeneric` to implement the Wishart
+#' Build an `cgeneric` to implement the Wishart
 #' prior for a precision matrix.
 #' @param n the size of the precision matrix
 #' @param dof degrees of freedom model parameter
@@ -7,8 +7,8 @@
 #' Will be used as logical by INLA.
 #' @param useINLAprecomp logical, default is TRUE, indicating if it is to
 #' be used the shared object pre-compiled by INLA.
-#' This is not considered if 'libpath' is provided.
-#' @param libpath string, default is NULL, with the path to the shared object.
+#' This is not considered if 'shlib' is provided.
+#' @param shlib string, default is NULL, with the path to the shared object.
 #' @details
 #' For a random \eqn{p\times p} precision matrix \eqn{Q},
 #' given the parameters \eqn{d} and \eqn{R},
@@ -16,28 +16,28 @@
 #' scale \eqn{p\times p} matrix the Wishart density is
 #' \deqn{|Q|^{(d-p-1)/2}\textrm{e}^{-tr(RQ)/2}|R|^{p/2}2^{-dp/2}\Gamma_p(n/2)^{-1}}
 #'
-#' @return a `inla.cgeneric`, [cgeneric()] object.
+#' @return a `cgeneric`, [cgeneric()] object.
 cgeneric_Wishart <-
   function(n,
            dof,
            R,
            debug = FALSE,
            useINLAprecomp = TRUE,
-           libpath = NULL) {
+           shlib = NULL) {
 
-    if(is.null(libpath)) {
+    if(is.null(shlib)) {
       if (useINLAprecomp) {
-        libpath <- INLA::inla.external.lib("graphpcor")
+        shlib <- INLA::inla.external.lib("graphpcor")
       } else {
-        libpath <- system.file("libs", package = "graphpcor")
+        shlib <- system.file("libs", package = "graphpcor")
         if (Sys.info()["sysname"] == "Windows") {
-          libpath <- file.path(libpath, "graphpcor.dll")
+          shlib <- file.path(shlib, "graphpcor.dll")
         } else {
-          libpath <- file.path(libpath, "graphpcor.so")
+          shlib <- file.path(shlib, "graphpcor.so")
         }
       }
     }
-    stopifnot(file.exists(libpath))
+    stopifnot(file.exists(shlib))
 
     stopifnot(n>=1)
     stopifnot(dof>(n+1))
@@ -69,7 +69,7 @@ cgeneric_Wishart <-
       cat('hldet = ', hldetr, ', log const = ', lcprior, '\n')
     }
 
-    cmodel = "inla_cgeneric_Wishart"
+    cmodel = "cgeneric_Wishart"
 
     the_model <- list(
       f = list(
@@ -77,7 +77,7 @@ cgeneric_Wishart <-
         n = as.integer(n),
         cgeneric = list(
           model = cmodel,
-          shlib = libpath,
+          shlib = shlib,
           n = as.integer(n),
           debug = as.logical(debug),
           data = list(
@@ -92,7 +92,7 @@ cgeneric_Wishart <-
             ),
             characters = list(
               model = cmodel,
-              shlib = libpath
+              shlib = shlib
             ),
             matrices = list(
             ),
@@ -103,8 +103,8 @@ cgeneric_Wishart <-
         )
       )
 
-    class(the_model) <- "inla.cgeneric"
-    class(the_model$f$cgeneric) <- "inla.cgeneric"
+    class(the_model) <- "cgeneric"
+    class(the_model$f$cgeneric) <- "cgeneric"
 
     return(the_model)
 

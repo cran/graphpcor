@@ -2,17 +2,10 @@
 % Please edit documentation in R/cgeneric_Wishart.R
 \name{cgeneric_Wishart}
 \alias{cgeneric_Wishart}
-\title{Build an \code{inla.cgeneric} to implement the Wishart
+\title{Build an \code{cgeneric} to implement the Wishart
 prior for a precision matrix.}
 \usage{
-cgeneric_Wishart(
-  n,
-  dof,
-  R,
-  debug = FALSE,
-  useINLAprecomp = TRUE,
-  libpath = NULL
-)
+cgeneric_Wishart(n, dof, R, debug = FALSE, useINLAprecomp = TRUE, shlib = NULL)
 }
 \arguments{
 \item{n}{the size of the precision matrix}
@@ -26,15 +19,15 @@ Will be used as logical by INLA.}
 
 \item{useINLAprecomp}{logical, default is TRUE, indicating if it is to
 be used the shared object pre-compiled by INLA.
-This is not considered if 'libpath' is provided.}
+This is not considered if 'shlib' is provided.}
 
-\item{libpath}{string, default is NULL, with the path to the shared object.}
+\item{shlib}{string, default is NULL, with the path to the shared object.}
 }
 \value{
-a \code{inla.cgeneric}, \code{\link[=cgeneric]{cgeneric()}} object.
+a \code{cgeneric}, \code{\link[INLAtools:cgeneric-class]{INLAtools::cgeneric()}} object.
 }
 \description{
-Build an \code{inla.cgeneric} to implement the Wishart
+Build an \code{cgeneric} to implement the Wishart
 prior for a precision matrix.
 }
 \details{

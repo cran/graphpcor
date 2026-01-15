@@ -1,46 +1,25 @@
-#' Define a tree used to model correlation matrices
-#' using a shared latent variables method represented by a tree,
-#' whose nodes represent the two kind of variables:
-#' children and parent. See [treepcor-class].
+#' @describeIn treepcor
+#' A tree from a formula for each parent.
 #' @param ... a list of formula used as relationship
 #' to define a three for correlation modeling, see [treepcor()].
 #' Parent nodes shall be in the right side while children
 #' (or parent with a parent) in the left side.
 #' @details
+#' In the formula, the left side are parent variables,
+#' and the right side include all the children and
+#' parents that are also children.
 #' The children variables are those with an ancestor (parent),
 #' and are identified as `c1`, ..., `cn`, where `n` is the
 #' total number of children variables.
-#' The variables are identified as `p1`, ..., `pm`,
+#' The parent variables are identified as `p1`, ..., `pm`,
 #' where the `m` is the number of parent variables.
-#' The main parent (fist) should be identified as `p1`.
-#' Parent variables (except `p1`) have an ancestor,
-#' which is a parent variable.
+#' The main parent (first) should be identified as `p1`.
+#' Except `p1` all the other parent variables
+#' have an ancestor, which is a parent variable.
 #' @return a `treepcor` object
 #' @importFrom stats as.formula
 #' @export
-#' @examples
-#' g1 <- treepcor(p1 ~ c1 + c2 - c3)
-#' g1
-#' summary(g1)
-#' plot(g1)
-#' prec(g1)
-#' prec(g1, theta = 0)
-#'
-#' g2 <- treepcor(p1 ~ c1 + c2 + p2,
-#'           p2 ~ c3 - c4)
-#' g2
-#' summary(g2)
-#' plot(g2)
-#' prec(g2)
-#' prec(g2, theta = c(0, 0))
-#'
-#' g3 <- treepcor(p1 ~ -p2 + c1 + c2,
-#'           p2 ~ c3)
-#' g3
-#' summary(g3)
-#' plot(g3)
-#' prec(g3)
-#' prec(g3, theta = c(0,0))
+#' @example demo/treepcor.R
 treepcor <- function(...) {
 
   fch <- as.character(match.call())[-1]
@@ -215,6 +194,7 @@ dim.treepcor <- function(x, ...) {
 #' @describeIn treepcor
 #' The `drop1` method for a `treepcor`
 #' @param object treepcor
+#' @importFrom INLAtools is.zero
 #' @export
 setMethod(
   "drop1",
@@ -468,7 +448,7 @@ etreepcor2precision <- function(d.el) {
 #' The `vcov` method for a `treepcor`
 #' @importFrom stats cov2cor
 #' @param object treepcor
-#' @param ... usde to pass `theta` as a numeric vector
+#' @param ... used to pass `theta` as a numeric vector
 #' with the model parameters
 #' @export
 setMethod(
@@ -542,13 +522,12 @@ etreepcor2variance <- function(d.el) {
   stopifnot(all.equal(iP,diag(itop)))
   return(list(iparent = iP, iv = iv, itop = itop, schildren=sch))
 }
-#' @describeIn cgeneric
+#' @describeIn treepcor
 #' The `cgeneric` method for `treepcor`, uses [cgeneric_treepcor()]
 #' @export
-cgeneric.treepcor <- function(...) {
+cgeneric.treepcor <- function(model, ...) {
   args <- list(...)
-  args$graph <- args$model
-  args$model <- NULL
+  args$model <- model
   do.call(what = 'cgeneric_treepcor',
           args = args)
 }

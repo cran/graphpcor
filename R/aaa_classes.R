@@ -1,32 +1,17 @@
-#' Set a tree whose nodes represent the two kind of variables:
-#' children and parent.
+#' treepcor: correlation from tree
+#' @description A tree with two kind of nodes,
+#' parents and children. The parents are nodes with
+#' children. The children are nodes with no children.
+#' This is used to model correlation matrices, where
+#' parents represent latent variables, and children
+#' represent the variables of interest.
 setClass("treepcor")
 
-#' Set a graph whose nodes and edges represent variables and
-#' conditional distributions, respectively.
+#' graphpcor: correlation from nodes and edges
+#' @description A graphpcor is a graph where
+#' a node represents a variable and an edge
+#' represent a conditional distribution.
+#' The correlation built from a `graphpcor` consider
+#' the parameters for the Cholesky of a precision matrix,
+#' whose non-zero pattern is given from the graph.
 setClass("graphpcor")
-
-#' `inla.rgeneric` class, short `rgeneric`,
-#' to define a [INLA::rgeneric()] latent model
-#' @rdname rgeneric
-setClass(
-  "inla.rgeneric",
-  slots = "f",
-  validity = function(object) {
-    all(c("model", "n", "rgeneric") %in%
-          names(object$f))
-  }
-)
-
-#' `inla.cgeneric` class, short `cgeneric`,
-#' to define a [INLA::cgeneric()] latent model
-#' @rdname cgeneric
-setClass(
-  "inla.cgeneric",
-  slots = "f",
-  validity = function(object) {
-    all(c("model", "n", "cgeneric") %in%
-          names(object$f))
-  }
-)
-
