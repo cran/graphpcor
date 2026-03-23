@@ -11,8 +11,14 @@ dim(g)
 cmodel <- cgeneric(g, lambda = 10, base = c(-1, -0.5))
 cmodel
 
+initial(cmodel)
+
 graph(cmodel)
+
+prec(cmodel, theta = c(-1, 1)/3)
+
 prec(cmodel, theta = c(-1, -0.5))
+
 solve(prec(cmodel, theta = c(-1, -0.5)))
 
 cfam <- list(hyper = list(prec = list(initial = 10, fixed = TRUE)))
@@ -24,5 +30,3 @@ stopifnot(isTRUE(fit$ok))
 
 fit$mode$theta
 solve(prec(cmodel, theta = fit$mode$theta))
-
-

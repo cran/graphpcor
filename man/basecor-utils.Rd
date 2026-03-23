@@ -3,12 +3,9 @@
 \name{basecor-utils}
 \alias{basecor-utils}
 \alias{cholcor}
-\alias{Hcorrel}
-\title{Internal functions used by basecor}
+\title{Functions used by/to basecor}
 \usage{
-cholcor(theta, p, itheta, parametrization = "cpc")
-
-Hcorrel(theta, p, parametrization, itheta, C0, decomposition, ...)
+cholcor(theta, p, iLtheta, parametrization = "cpc")
 }
 \arguments{
 \item{theta}{numeric parameter vector.}
@@ -16,43 +13,29 @@ Hcorrel(theta, p, parametrization, itheta, C0, decomposition, ...)
 \item{p}{integer with the dimension,
 the number of rows/columns of the correlation matrix.}
 
-\item{itheta}{integer vector to specify the (vectorized) position
-where 'theta' will be placed in the (initial, before fill-in)
-Cholesky (lower triangle) factor. Default is missing and assumes
-the dense case for when \code{itheta = which(lower.tri(...))}.}
+\item{iLtheta}{integer vector to specify the (vectorized) position
+where 'theta' will be placed in the (lower triangle)  Cholesky
+factorization of the correlation matrix. Default
+(missing, or if NULL) and assumes \code{iLtheta = which(lower.tri(...))}.}
 
 \item{parametrization}{character to specify the
 parametrization used. The available ones are
 "cpc" (or "CPC") or "sap" (or "SAP").
 See Details. The default is "cpc".}
-
-\item{C0}{base correlation matrix.}
-
-\item{decomposition}{character to inform
-which decomposition is to be applied to the
-hessian. The options are "eigen", "svd" and "chol".}
-
-\item{...}{further arguments passed on.}
 }
 \value{
 matrix with lower triangle as the Cholesky factor
-of a correlation matrix if parametrization is
-"cpc" or "sap" and of a precision matrix
-(of a correlation matrix) if parametrization is
-'itp' (with 'd0' as the diagonal elements).
-
-list containing the hessian,
-its 'square root', inverse 'square root' along
-with the decomposition used
+of a correlation matrix, and atttibutes:
+\code{parametrization} ("cpc" or "sap"), "theta"
+the parameter vector under the parametrization,
+"iLtheta" the index in the lower triangle matrix for theta,
+"logDeterminant" the log determinant for the correlation matrix.
 }
 \description{
-Internal functions used by basecor
+Functions used by/to basecor
 }
 \section{Functions}{
 \itemize{
-\item \code{cholcor()}: Cholesky parametrization for a correlation matrix
-
-\item \code{Hcorrel()}: Evaluate the hessian of the KLD for a
-correlation model around a base model.
+\item \code{cholcor()}: Build the (lower) Cholesky for a correlation matrix
 
 }}

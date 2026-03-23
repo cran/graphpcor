@@ -2,7 +2,7 @@
 % Please edit documentation in R/cgeneric_graphpcor.R
 \name{cgeneric_graphpcor}
 \alias{cgeneric_graphpcor}
-\title{Build an \code{cgeneric} for a graph, see \code{\link[=graphpcor]{graphpcor()}}}
+\title{Build an \code{cgeneric} for a (graph based) correlation matrix PC-prior.}
 \usage{
 cgeneric_graphpcor(
   model,
@@ -10,8 +10,9 @@ cgeneric_graphpcor(
   base,
   sigma.prior.reference,
   sigma.prior.probability,
-  params.id,
-  cor.params.fixed,
+  iparams,
+  cfixed,
+  d0,
   ...
 )
 }
@@ -21,73 +22,69 @@ a square matrix (to be used as a graph)
 to define the precision structure of the model.}
 
 \item{lambda}{the parameter for the exponential prior on
-the radius of the sphere, see details.}
+the radius of the sphere, see details in the
+PC-multivariate vignette.}
 
-\item{base}{numeric vector with length \code{m}, \code{m} is the
-number of edges in the graph, or matrix with the reference
-correlation model against what the KLD will be evaluated.
-If it is a vector, a correlation matrix is defined
-considering the graph model and this vector as
-the parameters in the lower triangle matrix L.
-If it is a matrix, it will be checked if the graph model
-can generates this.}
+\item{base}{numeric vector, correlation matrix or
+\code{basepcor} object. See \code{\link[=basepcor]{basepcor()}} for details.
+If the output of a \code{\link[=basepcor]{basepcor()}} is provided,
+\code{iLtheta} will be considered from it,
+and \code{iparams} for the correlation parameters as well.}
 
-\item{sigma.prior.reference}{numeric vector with length \code{n},
-\code{n} is the number of nodes (variables) in the graph, as the
-reference standard deviation to define the PC prior for each
-marginal variance parameters. If missing, the model will be
-assumed for a correlation. If a length \code{n} vector is given
-and \code{sigma.prior.probability} is missing, it will be used as
-known square root of the variances.
-NOTE: \code{params.id} will be applied here as
-\code{sigma.prior.reference[params.id[1:n]]}.}
+\item{sigma.prior.reference}{numeric vector to set the reference
+for each standard deviation parameter for its PC-prior.
+If missing, the model will be assumed as for a correlation.
+Note: \code{iparams} will be applied here as
+\code{sigma.prior.reference[iparams[1:n]]}.}
 
-\item{sigma.prior.probability}{numeric vector with length \code{n}
-to set the probability statement of the PC prior for each
+\item{sigma.prior.probability}{numeric vector with to
+set the probability statement of the PC prior for each
 marginal variance parameters. The probability statement is
 P(sigma < \code{sigma.prior.reference}) = p. If missing, all the
-marginal variances are considered as known, as described in
-\code{sigma.prior.reference}.
+marginal variances are considered as known.
 If a vector is given and a probability is NA, 0 or 1, the
 corresponding \code{sigma.prior.reference} will be used as fixed.
-NOTE: \code{params.id} will be applied here as
-\code{sigma.prior.probability[params.id[1:n]]}.}
+Note: \code{iparams} will be applied here as
+\code{sigma.prior.probability[iparams[1:n]]}.}
 
-\item{params.id}{integer ordered vector with length equals
-to \code{n+m} to specify common parameter values. If missing it
-is assumed \code{1:(n+m)} and all parameters are assumed distinct.
-The first \code{n} indexes the square root of the marginal
-variances and the remaining indexes the edges parameters.
-Example: By setting \code{params.id = c(1,1,2,3, 4,5,5,6)},
-the first two standard deviations are common and the
-second and third edges parameters are common as well,
-giving 6 unknown parameters in the model.}
+\item{iparams}{integer vector with length equal \code{n+m},
+where \code{m} is the number of correlation parameters,
+to identify (possible) common parameters in the model.
+Default is \code{1:(n+m)}.
+Note: \code{c(1,2,1)} is allowed, but \code{c(2,1,2)} is not.}
 
-\item{cor.params.fixed}{numeric vector of length \code{m}
-providing the value(s) at which the lower parameter(s)
-of the L matrix to be fixed and not estimated.
-NA indicates not fixed and all are set to be estimated by default.
-Example: with \code{cor.params.fixed = c(NA, -1, NA, 1)} the first
-and the third of these parameters will be estimated while
-the second is fixed and equal to -1 and the forth is fixed
-and equal to 1. NOTE: \code{params.id} will be applied here as
-\code{cor.params.fixed[params.id[(n+1:m)]-n+1]}, thus the provided
-examples give \verb{NA -1 -1 NA} and so the second and third low L
-parameters are fixed to \code{-1}.}
+\item{cfixed}{integer vector to specify which correlation
+parameters are treated as known and fixed.
+By default all correlation parameters are treated as unknown.
+Example: if \code{cfixed = c(1,3)}, the first and third
+correlation parameters will be treated as fixed and the
+Hessian will be computed for the second correlation parameter.
+Please see the examples in \code{\link[=basepcor]{basepcor()}}.
+Note: consider \code{iparams[n+1:m]-iparams[n]}.}
 
-\item{...}{additional arguments that will be passed on to
-\code{\link[INLAtools:cgeneric-class]{INLAtools::cgenericBuilder()}}.}
+\item{d0}{numeric vector to specify the diagonal of the
+Cholesky factor for the initial precision matrix \code{Q0},
+passed on to \code{\link[=basepcor]{basepcor()}}. Default is \code{d0 = n:1}.}
+
+\item{...}{additional arguments passed on to
+\code{\link[INLAtools:cgeneric-class]{INLAtools::cgeneric()}}, such as \code{debug},
+\code{shlib} and \code{useINLAprecomp}.}
 }
 \value{
 \code{cgeneric} object.
 }
 \description{
-From either a \code{graph} (see \code{\link[INLAtools:INLAtools-methods]{INLAtools::graph()}}) or
+From either a \code{graphpcor} (see \code{\link[=graphpcor]{graphpcor()}}) or
 a square matrix (used as a graph),
 creates an \code{cgeneric} (see \code{\link[INLAtools:cgeneric-class]{INLAtools::cgeneric()}})
 to implement the Penalized Complexity prior using the
 Kullback-Leibler divergence - KLD from a base graphpcor.
 }
+\details{
+The parametrization is set as in \code{\link[=basepcor]{basepcor()}} and the base
+is used to define an informative prior, as derived in
+the pcmultivariate vignette.
+}
 \seealso{
-\code{\link[=graphpcor]{graphpcor()}}
+\code{\link[=graphpcor]{graphpcor()}} and \code{\link[=basepcor]{basepcor()}}
 }

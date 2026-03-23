@@ -1,7 +1,7 @@
 Package: graphpcor
 Type: Package
 Title: Models for Correlation Matrices Based on Graphs
-Version: 0.1.15
+Version: 0.1.24
 Maintainer: Elias Teixeira Krainski <eliaskrainski@gmail.com>
 Authors@R: c(
  person(given = c("Elias"),
@@ -45,17 +45,16 @@ Description: Implement some models for
   This allows one to use these models as building 
   blocks combined and to other latent Gaussian models 
   in order to build complex data models.
-Additional_repositories: https://inla.r-inla-download.org/R/testing
 License: GPL (>= 2)
 Encoding: UTF-8
 RoxygenNote: 7.3.3
 NeedsCompilation: yes
-Depends: R (>= 4.3), Matrix, INLAtools, graph, numDeriv
-Imports: methods, stats, utils, Rgraphviz
-Suggests: knitr, INLA (>= 25.12.16)
+Depends: R (>= 4.3), Matrix, igraph, INLAtools (>= 0.0.8), numDeriv
+Imports: methods, stats, utils
+Suggests: knitr
 BuildVignettes: true
 VignetteBuilder: knitr
-Packaged: 2026-01-15 08:07:15 UTC; eliask
+Packaged: 2026-03-20 21:09:51 UTC; eliask
 Author: Elias Teixeira Krainski [cre, aut, cph] (ORCID:
     <https://orcid.org/0000-0002-7063-2615>),
   Denis Rustand [aut, cph] (ORCID:
@@ -66,4 +65,4 @@ Author: Elias Teixeira Krainski [cre, aut, cph] (ORCID:
     <https://orcid.org/0000-0002-4334-2057>),
   Haavard Rue’ [aut] (ORCID: <https://orcid.org/0000-0002-0222-1881>)
 Repository: CRAN
-Date/Publication: 2026-01-15 08:40:01 UTC
+Date/Publication: 2026-03-23 07:20:02 UTC
