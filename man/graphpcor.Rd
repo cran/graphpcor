@@ -13,7 +13,7 @@
 \alias{dim.graphpcor}
 \alias{plot.graphpcor}
 \alias{vcov.graphpcor}
-\alias{prec.graphpcor}
+\alias{gphcQ}
 \alias{cgeneric.graphpcor}
 \alias{cgeneric.Matrix}
 \title{graphpcor: correlation from nodes and edges}
@@ -42,7 +42,7 @@ graphpcor(...)
 
 \method{vcov}{graphpcor}(object, ...)
 
-\method{prec}{graphpcor}(model, ...)
+gphcQ(model, ...)
 
 \method{cgeneric}{graphpcor}(model, ...)
 
@@ -95,13 +95,13 @@ whose non-zero pattern is given from the graph.
 
 \item \code{vcov(graphpcor)}: The \code{vcov} method for a \code{graphpcor}
 
-\item \code{prec(graphpcor)}: The precision method for 'graphpcor'
-
 \item \code{cgeneric(graphpcor)}: The \code{cgeneric} method for \code{graphpcor} uses \code{\link[=cgeneric_graphpcor]{cgeneric_graphpcor()}}
 
 }}
 \section{Functions}{
 \itemize{
+\item \code{gphcQ()}: The precision method for 'graphpcor'
+
 \item \code{cgeneric(Matrix)}: The \code{cgeneric} method for \code{Matrix} uses \code{\link[=cgeneric_graphpcor]{cgeneric_graphpcor()}}
 
 }}

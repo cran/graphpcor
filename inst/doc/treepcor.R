@@ -1,10 +1,9 @@
-## ----setup, include=FALSE-----------------------------------------------------
+## ----setup--------------------------------------------------------------------
 knitr::opts_chunk$set(
   echo = TRUE,
   message = FALSE, 
   warning = FALSE,
   fig.width = 9, 
-  fig.height = 5, 
   out.width = '0.49\\textwidth', 
   fig.align = 'center')
 library(graphpcor)
@@ -42,10 +41,10 @@ dim(tree1)
 plot(tree1)
 
 ## ----qs1, include = chinclude-------------------------------------------------
-prec(tree1)
+tpcQ(tree1)
 
 ## ----q, include = chinclude---------------------------------------------------
-q1 <- prec(tree1, theta = 0)
+q1 <- tpcQ(tree1, theta = 0)
 q1
 
 ## ----v1, include = chinclude--------------------------------------------------
@@ -73,7 +72,7 @@ plot(tree2)
 drop1(tree2)
 
 ## ----q2-----------------------------------------------------------------------
-q2 <- prec(tree2, theta = c(0, 0))
+q2 <- tpcQ(tree2, theta = c(0, 0))
 q2
 
 ## ----c2-----------------------------------------------------------------------
@@ -90,7 +89,7 @@ tree2b
 summary(tree2b)
 
 ## ----prec2--------------------------------------------------------------------
-q2b <- prec(tree2b, theta = c(0, 0))
+q2b <- tpcQ(tree2b, theta = c(0, 0))
 q2b
 
 ## ----cov2b--------------------------------------------------------------------
@@ -148,14 +147,14 @@ cmodel <- cgeneric(
 haveINLA <- FALSE
 
 ## ----ccheck, eval = haveINLA--------------------------------------------------
-# graph(cmodel)
-# initial(cmodel)
+# cgeneric_cgeneric_graph(cmodel)
+# cgeneric_initial(cmodel)
 # prior(cmodel, theta = rep(0, sum(np)))
 # prior(cmodel, theta = rep(1, sum(np)))
 # 
 # np
-# prec(cmodel, theta = rep(0, sum(np)))
-# (Qc <- prec(cmodel, theta = theta1))
+# tpcQ(cmodel, theta = rep(0, sum(np)))
+# (Qc <- tpcQ(cmodel, theta = theta1))
 # all.equal(Vg, as.matrix(solve(Qc)))
 
 ## ----mfit, eval = haveINLA----------------------------------------------------

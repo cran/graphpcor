@@ -23,7 +23,6 @@
 #' Except `p1` all the other parent variables
 #' have an ancestor, which is a parent variable.
 #' @return a `treepcor` object
-#' @importFrom stats as.formula
 #' @export
 #' @example demo/treepcor.R
 treepcor <- function(...) {
@@ -200,12 +199,11 @@ dim.treepcor <- function(x, ...) {
 #' @describeIn treepcor
 #' The `drop1` method for a `treepcor`
 #' @param object treepcor
-#' @importFrom INLAtools is.zero
-#' @importFrom grDevices rgb
-#' @importFrom stats drop1
+#' @param scope not used
+#' @param ... not used
 #' @export
-drop1 <-
-  function(object) {
+drop1.treepcor <-
+  function(object, scope, ...) {
     trm0 <- attr(object, "relationship")
     m <- ncol(trm0)
     if(m==1) return(NULL)
@@ -235,7 +233,6 @@ drop1 <-
 #' @param x treepcor object
 #' @param y not used
 #' @method plot treepcor
-#' @importFrom methods getMethod
 #' @export
 plot.treepcor <- function(x, y, ...) {
     trm <- attr(x, "relationship")
@@ -244,6 +241,13 @@ plot.treepcor <- function(x, y, ...) {
     dotArgs <- list(...)
     if(is.null(dotArgs$Rgraphviz) ||
        !dotArgs$Rgraphviz) { ## depends on igraph
+      higraph <- try(do.call(
+        what = "require",
+        args = list(package = "igraph")), silent = TRUE)
+      if(inherits(higraph, "try-error")) {
+        cat(higraph)
+        stop("Please install 'igraph'!")
+      }
       tp2a <- function(r) {
         p <- colnames(r)
         cp <- rownames(r)
@@ -365,12 +369,12 @@ plot.treepcor <- function(x, y, ...) {
     }
 }
 #' @describeIn treepcor
-#' The `prec` for a `treepcor`
+#' The precision for a `treepcor`.
 #' @param model treepcor
 #' @param ... to be used to pass `theta` as a
 #' numeric vector with the model parameters
 #' @export
-prec.treepcor <- function(model, ...) {
+tpcQ <- function(model, ...) {
   d <- dim(model)
   edgl <- edges(model)
   q.el <- etreepcor2precision(edgl[1:d[2]])
@@ -463,7 +467,6 @@ etreepcor2precision <- function(d.el) {
 }
 #' @describeIn treepcor
 #' The `vcov` method for a `treepcor`
-#' @importFrom stats cov2cor
 #' @param object treepcor
 #' @param ... used to pass `theta` as a numeric vector
 #' with the model parameters

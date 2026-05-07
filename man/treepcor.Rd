@@ -5,9 +5,9 @@
 \alias{print.treepcor}
 \alias{summary.treepcor}
 \alias{dim.treepcor}
-\alias{drop1}
+\alias{drop1.treepcor}
 \alias{plot.treepcor}
-\alias{prec.treepcor}
+\alias{tpcQ}
 \alias{etreepcor2precision}
 \alias{vcov.treepcor}
 \alias{etreepcor2variance}
@@ -22,11 +22,11 @@ treepcor(...)
 
 \method{dim}{treepcor}(x, ...)
 
-drop1(object)
+\method{drop1}{treepcor}(object, scope, ...)
 
 \method{plot}{treepcor}(x, y, ...)
 
-\method{prec}{treepcor}(model, ...)
+tpcQ(model, ...)
 
 etreepcor2precision(d.el)
 
@@ -43,6 +43,8 @@ with the model parameters}
 \item{x}{treepcor object}
 
 \item{object}{treepcor}
+
+\item{scope}{not used}
 
 \item{y}{not used}
 
@@ -83,9 +85,9 @@ have an ancestor, which is a parent variable.
 
 \item \code{dim(treepcor)}: The \code{dim} for a \code{treepcor}
 
-\item \code{plot(treepcor)}: The \code{plot} method for a \code{treepcor}
+\item \code{drop1(treepcor)}: The \code{drop1} method for a \code{treepcor}
 
-\item \code{prec(treepcor)}: The \code{prec} for a \code{treepcor}
+\item \code{plot(treepcor)}: The \code{plot} method for a \code{treepcor}
 
 \item \code{vcov(treepcor)}: The \code{vcov} method for a \code{treepcor}
 
@@ -94,7 +96,7 @@ have an ancestor, which is a parent variable.
 }}
 \section{Functions}{
 \itemize{
-\item \code{drop1()}: The \code{drop1} method for a \code{treepcor}
+\item \code{tpcQ()}: The precision for a \code{treepcor}.
 
 \item \code{etreepcor2precision()}: Internal function to extract elements to
 build the precision from the \code{treepcor} edges.
@@ -144,9 +146,9 @@ summary(tree1)
 
 plot(tree1)
 
-prec(tree1)
+tpcQ(tree1)
 
-(q1 <- prec(tree1, theta = c(0)))
+(q1 <- tpcQ(tree1, theta = c(0)))
 
 v1 <- chol2inv(chol(q1))
 
@@ -174,14 +176,14 @@ tree2
 dim(tree2)
 summary(tree2)
 
-prec(tree2)
-prec(tree2, theta = c(0, 0))
-prec(tree2, theta = c(-1, 1))
+tpcQ(tree2)
+tpcQ(tree2, theta = c(0, 0))
+tpcQ(tree2, theta = c(-1, 1))
 
 vcov(tree2, raw = TRUE)
 cov2cor(vcov(tree2, raw = TRUE))
 
-cov2cor(solve(prec(tree2, theta = c(0,0))))
+cov2cor(solve(tpcQ(tree2, theta = c(0,0))))
 vcov(tree2, theta = c(0,0))
 vcov(tree2, theta = c(log(4:1), 0,0))
 
@@ -204,12 +206,12 @@ par(mfrow = c(1, 2), mar = c(0,0,0,0))
 plot(tree2)
 plot(tree2b)
 
-prec(tree2)
-prec(tree2b)
+tpcQ(tree2)
+tpcQ(tree2b)
 
 ## prec is not equal
-all.equal(prec(tree2, theta = c(0, 0)),
-          prec(tree2b, theta = c(0, 0)))
+all.equal(tpcQ(tree2, theta = c(0, 0)),
+          tpcQ(tree2b, theta = c(0, 0)))
 
 ## vcov is equal
 all.equal(vcov(tree2, theta = c(0, 0)),
